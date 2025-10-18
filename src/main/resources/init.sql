@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    name_ru VARCHAR(100) NOT NULL,
+    short_description VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS items (

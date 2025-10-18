@@ -18,4 +18,7 @@ public class Category {
 
     @Column("name")
     private String name;
+
+    @Column("name_ru")
+    private String nameRu;
 }
