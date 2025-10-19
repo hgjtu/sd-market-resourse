@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS items (
     description TEXT,
     images_urls TEXT[],
     price INTEGER CHECK (price >= 0),
-    location VARCHAR(255)
+    location VARCHAR(255),
+    type VARCHAR(5) NOT NULL,
+    publication_date DATE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS comments (

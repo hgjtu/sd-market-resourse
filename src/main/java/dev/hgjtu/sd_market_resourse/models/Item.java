@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Table("items")
@@ -30,10 +31,19 @@ public class Item {
     @Column("location")
     private String location;
 
+    @Column("type")
+    private String type;
+
+    @Column("publication_date")
+    private LocalDate publicationDate;
+
     public Item() {
     }
 
-    public Item(Long id, Integer categoryId, String title, String description, List<String> imagesUrls, Integer price, String location) {
+    public Item(Long id, Integer categoryId, String title,
+                String description, List<String> imagesUrls,
+                Integer price, String location, String type,
+                LocalDate publicationDate) {
         this.id = id;
         this.categoryId = categoryId;
         this.title = title;
@@ -41,6 +51,8 @@ public class Item {
         this.imagesUrls = imagesUrls;
         this.price = price;
         this.location = location;
+        this.type = type;
+        this.publicationDate = publicationDate;
     }
 
     public Long getId() {
@@ -97,5 +109,21 @@ public class Item {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public LocalDate getPublicationDate() {
+        return publicationDate;
+    }
+
+    public void setPublicationDate(LocalDate publicationDate) {
+        this.publicationDate = publicationDate;
     }
 }
