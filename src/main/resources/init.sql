@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS items (
     id BIGSERIAL PRIMARY KEY,
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+    user_id BIGINT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     images_urls TEXT[],

@@ -16,6 +16,9 @@ public class Item {
     @Column("category_id")
     private Integer categoryId;
 
+    @Column("user_id")
+    private Long userId;
+
     @Column("title")
     private String title;
 
@@ -40,12 +43,27 @@ public class Item {
     public Item() {
     }
 
-    public Item(Long id, Integer categoryId, String title,
+    public Item(Long id, Integer categoryId, Long userId, String title,
                 String description, List<String> imagesUrls,
                 Integer price, String location, String type,
                 LocalDate publicationDate) {
         this.id = id;
         this.categoryId = categoryId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.imagesUrls = imagesUrls;
+        this.price = price;
+        this.location = location;
+        this.type = type;
+        this.publicationDate = publicationDate;
+    }
+
+    public Item(Integer categoryId, Long userId,
+                String title, String description, List<String> imagesUrls,
+                Integer price, String location, String type, LocalDate publicationDate) {
+        this.categoryId = categoryId;
+        this.userId = userId;
         this.title = title;
         this.description = description;
         this.imagesUrls = imagesUrls;
@@ -125,5 +143,13 @@ public class Item {
 
     public void setPublicationDate(LocalDate publicationDate) {
         this.publicationDate = publicationDate;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }
