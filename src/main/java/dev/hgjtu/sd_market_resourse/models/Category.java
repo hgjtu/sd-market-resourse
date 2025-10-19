@@ -1,7 +1,5 @@
 package dev.hgjtu.sd_market_resourse.models;
 
-
-import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -16,6 +14,12 @@ public class Category {
 
     @Column("name_ru")
     private String nameRu;
+
+    @Column("short_description")
+    private String shortDescription;
+
+    @Column("description")
+    private String description;
 
     public Integer getId() {
         return id;
@@ -39,5 +43,21 @@ public class Category {
 
     public void setNameRu(String nameRu) {
         this.nameRu = nameRu;
+    }
+
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    public void setShortDescription(String shortDescription) {
+        this.shortDescription = shortDescription;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

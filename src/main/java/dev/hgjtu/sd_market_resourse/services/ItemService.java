@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
+import java.util.Optional;
+
 @Service
 public class ItemService {
     private final ItemRepository itemRepository;
@@ -40,7 +42,10 @@ public class ItemService {
                                                 .map(item -> new ItemMinResponse(
                                                         item.getId(),
                                                         item.getTitle(),
-                                                        item.getImagesUrls().get(0),
+                                                        Optional.ofNullable(item.getImagesUrls())
+                                                                .filter(list -> !list.isEmpty())
+                                                                .map(list -> list.get(0))
+                                                                .orElse(null),
                                                         item.getPrice()
                                                 ))
                                 );
@@ -54,20 +59,33 @@ public class ItemService {
         return categoryRepository.existsById(id)
                 .flatMapMany(exists -> {
                     if (exists) {
-                        return categoryRepository.findById(id)
-                                .flatMapMany(category1 ->
-                                        itemRepository.findAllByCategoryId(category1.getId())
-                                                .map(item -> new ItemMinResponse(
-                                                        item.getId(),
-                                                        item.getTitle(),
-                                                        item.getImagesUrls().get(0),
-                                                        item.getPrice()
-                                                ))
-                                );
+                        return itemRepository.findAllByCategoryId(id)
+                                .map(item -> new ItemMinResponse(
+                                        item.getId(),
+                                        item.getTitle(),
+                                        Optional.ofNullable(item.getImagesUrls())
+                                                .filter(list -> !list.isEmpty())
+                                                .map(list -> list.get(0))
+                                                .orElse(null),
+                                        item.getPrice()
+                                ));
                     } else {
                         return Flux.error(new Exception("Category not found"));
                     }
                 });
+    }
+
+    public Flux<ItemMinResponse> findAll() {
+        return itemRepository.findAll()
+                .map(item -> new ItemMinResponse(
+                        item.getId(),
+                        item.getTitle(),
+                        Optional.ofNullable(item.getImagesUrls())
+                                .filter(list -> !list.isEmpty())
+                                .map(list -> list.get(0))
+                                .orElse(null),
+                        item.getPrice()
+                ));
     }
 
 }

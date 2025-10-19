@@ -12,4 +12,20 @@ public class ItemMinResponse {
         this.mainImageUrl = mainImageUrl;
         this.price = price;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getMainImageUrl() {
+        return mainImageUrl;
+    }
+
+    public Integer getPrice() {
+        return price;
+    }
 }
