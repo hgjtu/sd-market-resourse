@@ -7,11 +7,6 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.List;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@Data
 @Table("items")
 public class Item {
     @Id
@@ -34,4 +29,73 @@ public class Item {
 
     @Column("location")
     private String location;
+
+    public Item() {
+    }
+
+    public Item(Long id, Integer categoryId, String title, String description, List<String> imagesUrls, Integer price, String location) {
+        this.id = id;
+        this.categoryId = categoryId;
+        this.title = title;
+        this.description = description;
+        this.imagesUrls = imagesUrls;
+        this.price = price;
+        this.location = location;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<String> getImagesUrls() {
+        return imagesUrls;
+    }
+
+    public void setImagesUrls(List<String> imagesUrls) {
+        this.imagesUrls = imagesUrls;
+    }
+
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+        this.price = price;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
 }

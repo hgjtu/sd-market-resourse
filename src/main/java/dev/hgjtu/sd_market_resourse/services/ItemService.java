@@ -3,17 +3,12 @@ package dev.hgjtu.sd_market_resourse.services;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.repos.CategoryRepository;
 import dev.hgjtu.sd_market_resourse.repos.ItemRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class ItemService {
     private final ItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
@@ -21,6 +16,12 @@ public class ItemService {
     private final WebClient webClient;
     @Value("${USER_RESOURCE_SERVER_URL}")
     private String resourceAUrl;
+
+    public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository, WebClient webClient) {
+        this.itemRepository = itemRepository;
+        this.categoryRepository = categoryRepository;
+        this.webClient = webClient;
+    }
 
 //    public Mono<String> getCombinedData() {
 //        return webClient.get()
@@ -35,7 +36,7 @@ public class ItemService {
                     if (exists) {
                         return categoryRepository.findByName(category)
                                 .flatMapMany(category1 ->
-                                        itemRepository.findAllByCategory(category1)
+                                        itemRepository.findAllByCategoryId(category1.getId())
                                                 .map(item -> new ItemMinResponse(
                                                         item.getId(),
                                                         item.getTitle(),
@@ -55,7 +56,7 @@ public class ItemService {
                     if (exists) {
                         return categoryRepository.findById(id)
                                 .flatMapMany(category1 ->
-                                        itemRepository.findAllByCategory(category1)
+                                        itemRepository.findAllByCategoryId(category1.getId())
                                                 .map(item -> new ItemMinResponse(
                                                         item.getId(),
                                                         item.getTitle(),
