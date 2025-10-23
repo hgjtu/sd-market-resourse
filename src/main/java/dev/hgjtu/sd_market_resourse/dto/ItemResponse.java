@@ -8,6 +8,8 @@ import java.util.List;
 
 
 public class ItemResponse {
+    private Long id;
+    private Integer categoryId;
     private String title;
     private String description;
     private String username;
@@ -15,9 +17,12 @@ public class ItemResponse {
     private Integer price;
     private String location;
     private LocalDate publicationDate;
+    private String type;
     private List<Comment> comments;
 
-    public ItemResponse(String title, String description, String username, List<String> imagesUrls, Integer price, String location, LocalDate publicationDate, List<Comment> comments) {
+    public ItemResponse(Long id, Integer categoryId, String title, String description, String username, List<String> imagesUrls, Integer price, String location, LocalDate publicationDate, String type, List<Comment> comments) {
+        this.id = id;
+        this.categoryId = categoryId;
         this.title = title;
         this.description = description;
         this.username = username;
@@ -25,7 +30,12 @@ public class ItemResponse {
         this.price = price;
         this.location = location;
         this.publicationDate = publicationDate;
+        this.type = type;
         this.comments = comments;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -58,5 +68,13 @@ public class ItemResponse {
 
     public List<Comment> getComments() {
         return comments;
+    }
+
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public String getType() {
+        return type;
     }
 }

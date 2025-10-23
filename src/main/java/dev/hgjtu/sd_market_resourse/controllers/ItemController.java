@@ -29,6 +29,12 @@ public class ItemController {
         return itemService.getAllByCategoryAndType(category, type);
     }
 
+    @GetMapping("/all-by-username/{username}/{type}")
+    public Flux<ItemMinResponse> allByUsername(@PathVariable String username,
+                                               @PathVariable String type) {
+        return itemService.getAllByUsernameAndType(username, type);
+    }
+
 //    @GetMapping("/all-by-category/{categoryId}")
 //    public Flux<ItemMinResponse> allByCategoryId(@PathVariable Integer categoryId) {
 //        return itemService.getAllByCategoryId(categoryId);
@@ -45,6 +51,23 @@ public class ItemController {
     public Mono<ResponseEntity<ItemResponse>> addItem(@RequestBody ItemRequest itemRequest,
                                                       @AuthenticationPrincipal Jwt jwt){
         return itemService.addItem(jwt.getClaim("sub"), itemRequest)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/edit/{id}")
+    public Mono<ResponseEntity<ItemResponse>> editItem(@PathVariable Long id,
+                                                       @RequestBody ItemRequest itemRequest,
+                                                       @AuthenticationPrincipal Jwt jwt){
+        return itemService.editItem(id, jwt.getClaim("sub"), itemRequest)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public Mono<ResponseEntity<String>> deleteItem(@PathVariable Long id,
+                                                       @AuthenticationPrincipal Jwt jwt){
+        return itemService.deleteItem(id, jwt.getClaim("sub"))
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
