@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/market-resource/categories")
 public class CategoryController {
     private final CategoryRepository categoryRepository;
 

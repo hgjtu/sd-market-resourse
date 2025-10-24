@@ -36,7 +36,7 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                                .anyExchange().authenticated()
+                                .anyExchange().permitAll()
 //                                .pathMatchers("/api/public/**", "/favicon.ico", "/error").permitAll()
 //                                .pathMatchers("/api/admin/**").hasAuthority("SCOPE_admin")
 //                                .pathMatchers("/api/user/**").hasAuthority("SCOPE_user")

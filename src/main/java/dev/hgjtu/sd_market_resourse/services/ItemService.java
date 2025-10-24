@@ -1,5 +1,6 @@
 package dev.hgjtu.sd_market_resourse.services;
 
+import com.netflix.discovery.DiscoveryClient;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
@@ -8,6 +9,7 @@ import dev.hgjtu.sd_market_resourse.models.Item;
 import dev.hgjtu.sd_market_resourse.repos.CategoryRepository;
 import dev.hgjtu.sd_market_resourse.repos.CommentRepository;
 import dev.hgjtu.sd_market_resourse.repos.ItemRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

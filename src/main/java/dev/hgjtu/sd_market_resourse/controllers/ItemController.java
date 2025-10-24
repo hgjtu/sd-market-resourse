@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/api/items")
+@RequestMapping("/api/market-resource/items")
 public class ItemController {
 
     private final ItemService itemService;
