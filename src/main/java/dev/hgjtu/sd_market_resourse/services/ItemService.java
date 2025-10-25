@@ -31,8 +31,12 @@ public class ItemService {
     private final CommentRepository commentRepository;
 
     private final WebClient webClient;
-    @Value("${USER_RESOURCE_SERVER_URL}")
-    private String userResourceUrl;
+
+    @Value("${GATEWAY_SERVICE_URL}")
+    private String gatewayServiceURL;
+    @Value("${USER_RESOURCE_PREFIX}")
+    private String userResourcePrefix;
+
 
     public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository, CommentRepository commentRepository, WebClient webClient) {
         this.itemRepository = itemRepository;
@@ -194,7 +198,7 @@ public class ItemService {
 
     public Mono<Long> checkUserExistenceByUsername(String username) {
         return webClient.get()
-                .uri(userResourceUrl + "/api/users/exists-by-username/{username}", username)
+                .uri(gatewayServiceURL + userResourcePrefix + "/users/exists-by-username/{username}", username)
                 .retrieve()
                 .bodyToMono(Long.class)
                 .switchIfEmpty(Mono.just(-1L));
@@ -202,7 +206,7 @@ public class ItemService {
 
     public Mono<String> getUsernameById(Long id) {
         return webClient.get()
-                .uri(userResourceUrl + "/api/users/get-username/{id}", id)
+                .uri(gatewayServiceURL + userResourcePrefix + "/users/get-username/{id}", id)
                 .retrieve()
                 .bodyToMono(String.class)
                 .switchIfEmpty(Mono.empty());
