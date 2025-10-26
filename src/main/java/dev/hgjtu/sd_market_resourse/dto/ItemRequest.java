@@ -2,7 +2,6 @@ package dev.hgjtu.sd_market_resourse.dto;
 
 import java.util.List;
 
-
 public class ItemRequest {
     private String title;
     private Integer categoryId;
