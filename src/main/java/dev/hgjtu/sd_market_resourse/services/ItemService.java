@@ -4,6 +4,7 @@ import com.netflix.discovery.DiscoveryClient;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
+import dev.hgjtu.sd_market_resourse.feignClients.UserClient;
 import dev.hgjtu.sd_market_resourse.models.Comment;
 import dev.hgjtu.sd_market_resourse.models.Item;
 import dev.hgjtu.sd_market_resourse.repos.CategoryRepository;
@@ -30,19 +31,15 @@ public class ItemService {
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
 
-    private final WebClient webClient;
+    private final UserClient userClient;
 
-    @Value("${GATEWAY_SERVICE_URL}")
-    private String gatewayServiceURL;
-    @Value("${USER_RESOURCE_PREFIX}")
-    private String userResourcePrefix;
-
-
-    public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository, CommentRepository commentRepository, WebClient webClient) {
+    @Autowired
+    public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository,
+                       CommentRepository commentRepository, UserClient userClient) {
         this.itemRepository = itemRepository;
         this.categoryRepository = categoryRepository;
         this.commentRepository = commentRepository;
-        this.webClient = webClient;
+        this.userClient = userClient;
     }
 
     public Flux<ItemMinResponse> getAllByCategoryAndType(String category, String type) {
@@ -197,18 +194,12 @@ public class ItemService {
     }
 
     public Mono<Long> checkUserExistenceByUsername(String username) {
-        return webClient.get()
-                .uri(gatewayServiceURL + userResourcePrefix + "/users/exists-by-username/{username}", username)
-                .retrieve()
-                .bodyToMono(Long.class)
+        return userClient.checkUserExistenceByUsername(username)
                 .switchIfEmpty(Mono.just(-1L));
     }
 
     public Mono<String> getUsernameById(Long id) {
-        return webClient.get()
-                .uri(gatewayServiceURL + userResourcePrefix + "/users/get-username/{id}", id)
-                .retrieve()
-                .bodyToMono(String.class)
+        return userClient.getUsernameById(id)
                 .switchIfEmpty(Mono.empty());
     }
 
