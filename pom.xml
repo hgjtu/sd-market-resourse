@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>dev.hgjtu</groupId>
-	<artifactId>sd-market-resourse</artifactId>
+	<artifactId>sd-market-resource</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>sd-market-resourse</name>
+	<name>sd-market-resource</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
