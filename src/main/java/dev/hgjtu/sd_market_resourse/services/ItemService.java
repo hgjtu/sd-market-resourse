@@ -193,12 +193,12 @@ public class ItemService {
                 });
     }
 
-    public Mono<Long> checkUserExistenceByUsername(String username) {
+    private Mono<Long> checkUserExistenceByUsername(String username) {
         return userClient.checkUserExistenceByUsername(username)
                 .switchIfEmpty(Mono.just(-1L));
     }
 
-    public Mono<String> getUsernameById(Long id) {
+    private Mono<String> getUsernameById(Long id) {
         return userClient.getUsernameById(id)
                 .switchIfEmpty(Mono.empty());
     }
