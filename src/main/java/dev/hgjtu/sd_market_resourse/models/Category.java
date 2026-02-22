@@ -4,6 +4,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.util.UUID;
+
 @Table("categories")
 public class Category {
     @Id
@@ -20,6 +22,9 @@ public class Category {
 
     @Column("description")
     private String description;
+
+    @Column("category_media")
+    private UUID categoryMedia;
 
     public Integer getId() {
         return id;
@@ -59,5 +64,13 @@ public class Category {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getCategoryMedia() {
+        return categoryMedia;
+    }
+
+    public void setCategoryMedia(UUID categoryMedia) {
+        this.categoryMedia = categoryMedia;
     }
 }

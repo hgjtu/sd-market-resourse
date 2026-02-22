@@ -25,9 +25,6 @@ public class Item {
     @Column("description")
     private String description;
 
-    @Column("images_urls")
-    private List<String> imagesUrls;
-
     @Column("price")
     private Integer price;
 
@@ -44,7 +41,7 @@ public class Item {
     }
 
     public Item(Long id, Integer categoryId, Long userId, String title,
-                String description, List<String> imagesUrls,
+                String description,
                 Integer price, String location, String type,
                 LocalDate publicationDate) {
         this.id = id;
@@ -52,7 +49,6 @@ public class Item {
         this.userId = userId;
         this.title = title;
         this.description = description;
-        this.imagesUrls = imagesUrls;
         this.price = price;
         this.location = location;
         this.type = type;
@@ -60,13 +56,12 @@ public class Item {
     }
 
     public Item(Integer categoryId, Long userId,
-                String title, String description, List<String> imagesUrls,
+                String title, String description,
                 Integer price, String location, String type, LocalDate publicationDate) {
         this.categoryId = categoryId;
         this.userId = userId;
         this.title = title;
         this.description = description;
-        this.imagesUrls = imagesUrls;
         this.price = price;
         this.location = location;
         this.type = type;
@@ -103,14 +98,6 @@ public class Item {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public List<String> getImagesUrls() {
-        return imagesUrls;
-    }
-
-    public void setImagesUrls(List<String> imagesUrls) {
-        this.imagesUrls = imagesUrls;
     }
 
     public Integer getPrice() {

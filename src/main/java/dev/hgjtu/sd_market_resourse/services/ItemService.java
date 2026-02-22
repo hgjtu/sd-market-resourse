@@ -1,45 +1,50 @@
 package dev.hgjtu.sd_market_resourse.services;
 
-import com.netflix.discovery.DiscoveryClient;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
 import dev.hgjtu.sd_market_resourse.feignClients.UserClient;
 import dev.hgjtu.sd_market_resourse.models.Comment;
 import dev.hgjtu.sd_market_resourse.models.Item;
+import dev.hgjtu.sd_market_resourse.models.ItemMedia;
 import dev.hgjtu.sd_market_resourse.repos.CategoryRepository;
 import dev.hgjtu.sd_market_resourse.repos.CommentRepository;
+import dev.hgjtu.sd_market_resourse.repos.ItemMediaRepository;
 import dev.hgjtu.sd_market_resourse.repos.ItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.URL;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ItemService {
     private final ItemRepository itemRepository;
+    private final ItemMediaRepository itemMediaRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
 
     private final UserClient userClient;
 
+    private final MediaService mediaService;
+
     @Autowired
-    public ItemService(ItemRepository itemRepository, CategoryRepository categoryRepository,
-                       CommentRepository commentRepository, UserClient userClient) {
+    public ItemService(ItemRepository itemRepository, ItemMediaRepository itemMediaRepository,
+                       CategoryRepository categoryRepository, CommentRepository commentRepository, UserClient userClient, MediaService mediaService) {
         this.itemRepository = itemRepository;
+        this.itemMediaRepository = itemMediaRepository;
         this.categoryRepository = categoryRepository;
         this.commentRepository = commentRepository;
         this.userClient = userClient;
+        this.mediaService = mediaService;
     }
 
     public Flux<ItemMinResponse> getAllByCategoryAndType(String category, String type) {
@@ -49,15 +54,20 @@ public class ItemService {
                         return categoryRepository.findByName(category)
                                 .flatMapMany(category1 ->
                                         itemRepository.findAllByCategoryIdAndTypeOrderByPublicationDate(category1.getId(), type)
-                                                .map(item -> new ItemMinResponse(
-                                                        item.getId(),
-                                                        item.getTitle(),
-                                                        Optional.ofNullable(item.getImagesUrls())
-                                                                .filter(list -> !list.isEmpty())
-                                                                .map(list -> list.get(0))
-                                                                .orElse(null),
-                                                        item.getPrice()
-                                                ))
+                                                .flatMap(item ->
+                                                        itemMediaRepository.findFirstByItemIdAndSortOrder(item.getId(), 0)
+                                                                .flatMap(itemMedia ->
+                                                                        mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                                                                .map(URL::toString)
+                                                                                .defaultIfEmpty("")
+                                                                )
+                                                                .map(url -> new ItemMinResponse(
+                                                                        item.getId(),
+                                                                        item.getTitle(),
+                                                                        url.isEmpty() ? null : url,
+                                                                        item.getPrice()
+                                                                ))
+                                                )
                                 );
                     } else {
                         return Flux.error(new Exception("Category not found"));
@@ -72,37 +82,22 @@ public class ItemService {
                         return Mono.error(new RuntimeException("User not found"));
                     } else {
                         return itemRepository.findAllByUserIdAndTypeOrderByPublicationDate(userId, type)
-                                .map(item -> new ItemMinResponse(
-                                        item.getId(),
-                                        item.getTitle(),
-                                        Optional.ofNullable(item.getImagesUrls())
-                                                .filter(list -> !list.isEmpty())
-                                                .map(list -> list.get(0))
-                                                .orElse(null),
-                                        item.getPrice()
-                                ));
+                                .flatMap(item ->
+                                        itemMediaRepository.findFirstByItemIdAndSortOrder(item.getId(), 0)
+                                                .flatMap(itemMedia ->
+                                                        mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                                                .map(URL::toString)
+                                                                .defaultIfEmpty("")
+                                                )
+                                                .map(url -> new ItemMinResponse(
+                                                        item.getId(),
+                                                        item.getTitle(),
+                                                        url.isEmpty() ? null : url,
+                                                        item.getPrice()
+                                                ))
+                                );
                     }
                 });
-//        return categoryRepository.existsByName(category)
-//                .flatMapMany(exists -> {
-//                    if (exists) {
-//                        return categoryRepository.findByName(category)
-//                                .flatMapMany(category1 ->
-//                                        itemRepository.findAllByCategoryIdAndTypeOrderByPublicationDate(category1.getId(), type)
-//                                                .map(item -> new ItemMinResponse(
-//                                                        item.getId(),
-//                                                        item.getTitle(),
-//                                                        Optional.ofNullable(item.getImagesUrls())
-//                                                                .filter(list -> !list.isEmpty())
-//                                                                .map(list -> list.get(0))
-//                                                                .orElse(null),
-//                                                        item.getPrice()
-//                                                ))
-//                                );
-//                    } else {
-//                        return Flux.error(new Exception("Category not found"));
-//                    }
-//                });
     }
 
     public Mono<ItemResponse> getItemById(Long id) {
@@ -110,14 +105,21 @@ public class ItemService {
                 .flatMap(item ->
                         getUsernameById(item.getUserId())
                                 .flatMap(username ->
-                                        commentRepository.findAllByItemId(id)
+                                        itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(item.getId())
+                                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                                        .map(URL::toString)
+                                                        .defaultIfEmpty("")
+                                                )
                                                 .collectList()
-                                                .map(comments -> mapToItemResponse(item, username, comments))
+                                                .flatMap(urls ->
+                                                        commentRepository.findAllByItemId(item.getId())
+                                                                .collectList()
+                                                                .map(comments -> mapToItemResponse(item, username, comments, urls))
+                                                )
                                 )
 
                 );
     }
-
 
     public Mono<ItemResponse> addItem(String username, ItemRequest itemRequest) {
         return checkUserExistenceByUsername(username)
@@ -130,12 +132,11 @@ public class ItemService {
                                 userId,
                                 itemRequest.getTitle(),
                                 itemRequest.getDescription(),
-                                itemRequest.getImagesUrls(),
                                 itemRequest.getPrice(),
                                 itemRequest.getLocation(),
                                 itemRequest.getType(),
                                 LocalDate.now()
-                        )).map(newItem -> mapToItemResponse(newItem, username, List.of()));
+                        )).map(newItem -> mapToItemResponse(newItem, username, List.of(), List.of())); // TODO а вот тут хз, как доавблять медиа при создании
                     }
                 });
     }
@@ -153,7 +154,6 @@ public class ItemService {
                                         item.setTitle(itemRequest.getTitle());
                                         item.setCategoryId(itemRequest.getCategoryId());
                                         item.setDescription(itemRequest.getDescription());
-                                        item.setImagesUrls(itemRequest.getImagesUrls());
                                         item.setPrice(itemRequest.getPrice());
                                         item.setLocation(itemRequest.getLocation());
                                         item.setType(itemRequest.getType());
@@ -164,9 +164,18 @@ public class ItemService {
                                         return Mono.error(new RuntimeException("Item not found"));
                                     }
                                 })
-                                .flatMap(savedItem -> commentRepository.findAllByItemId(savedItem.getId())
+                                .flatMap(savedItem ->
+                                        itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(savedItem.getId())
+                                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                                        .map(URL::toString)
+                                                        .defaultIfEmpty("")
+                                                )
                                                 .collectList()
-                                                .map(comments -> mapToItemResponse(savedItem, username, comments))
+                                                .flatMap(urls ->
+                                                        commentRepository.findAllByItemId(savedItem.getId())
+                                                                .collectList()
+                                                                .map(comments -> mapToItemResponse(savedItem, username, comments, urls))
+                                                )
                                 );
                     }
                 });
@@ -203,14 +212,14 @@ public class ItemService {
                 .switchIfEmpty(Mono.empty());
     }
 
-    private ItemResponse mapToItemResponse(Item item, String username, List<Comment> comments) {
+    private ItemResponse mapToItemResponse(Item item, String username, List<Comment> comments, List<String> mediaURLs) {
         return new ItemResponse(
                 item.getId(),
                 item.getCategoryId(),
                 item.getTitle(),
                 item.getDescription(),
                 username,
-                item.getImagesUrls(),
+                mediaURLs,
                 item.getPrice(),
                 item.getLocation(),
                 item.getPublicationDate(),
