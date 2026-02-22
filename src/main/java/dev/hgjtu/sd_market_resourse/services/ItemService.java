@@ -60,6 +60,7 @@ public class ItemService {
                                                                         mediaService.generateDownloadUrl(itemMedia.getMediaId())
                                                                                 .map(URL::toString)
                                                                                 .defaultIfEmpty("")
+                                                                                .onErrorResume(e -> Mono.just(""))
                                                                 )
                                                                 .map(url -> new ItemMinResponse(
                                                                         item.getId(),
@@ -88,6 +89,7 @@ public class ItemService {
                                                         mediaService.generateDownloadUrl(itemMedia.getMediaId())
                                                                 .map(URL::toString)
                                                                 .defaultIfEmpty("")
+                                                                .onErrorResume(e -> Mono.just(""))
                                                 )
                                                 .map(url -> new ItemMinResponse(
                                                         item.getId(),
@@ -109,6 +111,7 @@ public class ItemService {
                                                 .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
                                                         .map(URL::toString)
                                                         .defaultIfEmpty("")
+                                                        .onErrorResume(e -> Mono.just(""))
                                                 )
                                                 .collectList()
                                                 .flatMap(urls ->
@@ -169,6 +172,7 @@ public class ItemService {
                                                 .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
                                                         .map(URL::toString)
                                                         .defaultIfEmpty("")
+                                                        .onErrorResume(e -> Mono.just(""))
                                                 )
                                                 .collectList()
                                                 .flatMap(urls ->

@@ -32,11 +32,11 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 CREATE TABLE IF NOT EXISTS items_medias (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id BIGINT REFERENCES items(id) ON DELETE CASCADE,
     media_id UUID REFERENCES medias(id) ON DELETE CASCADE,
     sort_order INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (item_id, media_id)
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS comments (

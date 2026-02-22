@@ -10,10 +10,11 @@ import java.util.UUID;
 @Table("items_medias")
 public class ItemMedia {
     @Id
+    private UUID id;
+
     @Column("item_id")
     private Long itemId;
 
-    @Id
     @Column("media_id")
     private UUID mediaId;
 

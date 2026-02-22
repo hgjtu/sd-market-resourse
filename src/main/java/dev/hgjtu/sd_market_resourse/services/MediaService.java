@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 
@@ -91,18 +92,19 @@ public class MediaService {
                 );
     }
 
-    public Mono<URL> generateDownloadUrl(UUID mediaId) { // TODO сделать так, чтобы не падало при null
-        return mediaRepository.findById(mediaId)
+    public Mono<URL> generateDownloadUrl(UUID mediaId) {
+        return Mono.justOrEmpty(mediaId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("mediaId must not be null")))
+                .flatMap(mediaRepository::findById)
                 .switchIfEmpty(Mono.error(new RuntimeException("Media not found")))
                 .flatMap(media -> {
                     if (media.getStatus() != Media.Status.READY) {
                         return Mono.error(new RuntimeException("Media not ready for download"));
-                    } else {
-                        return Mono.just(presigner.presignGetObject(builder -> builder
-                                .getObjectRequest(req -> req.bucket(bucket).key(media.getObjectKey()))
-                                .signatureDuration(Duration.ofMinutes(10))
-                        ).url());
                     }
+                    return Mono.just(presigner.presignGetObject(builder -> builder
+                            .getObjectRequest(req -> req.bucket(bucket).key(media.getObjectKey()))
+                            .signatureDuration(Duration.ofMinutes(10))
+                    ).url());
                 });
     }
 
