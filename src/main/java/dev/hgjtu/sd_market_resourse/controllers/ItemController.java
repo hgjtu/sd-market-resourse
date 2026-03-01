@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/market-resource/items")
 public class ItemController {
@@ -55,19 +58,35 @@ public class ItemController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/edit/{id}")
-    public Mono<ResponseEntity<ItemResponse>> editItem(@PathVariable Long id,
+    @PostMapping("/add-media/{itemId}")
+    public Flux<String> addItemMedia(@PathVariable Long itemId,
+                                                   @RequestBody List<UUID> mediaIds,
+                                                   @AuthenticationPrincipal Jwt jwt){
+        return itemService.addItemMedia(itemId, jwt.getClaim("sub"),  mediaIds);
+    }
+
+    @PatchMapping("/edit/{itemId}")
+    public Mono<ResponseEntity<ItemResponse>> editItem(@PathVariable Long itemId,
                                                        @RequestBody ItemRequest itemRequest,
                                                        @AuthenticationPrincipal Jwt jwt){
-        return itemService.editItem(id, jwt.getClaim("sub"), itemRequest)
+        return itemService.editItem(itemId, jwt.getClaim("sub"), itemRequest)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/delete/{id}")
-    public Mono<ResponseEntity<String>> deleteItem(@PathVariable Long id,
-                                                       @AuthenticationPrincipal Jwt jwt){
-        return itemService.deleteItem(id, jwt.getClaim("sub"))
+    @DeleteMapping("/delete/{itemId}")
+    public Mono<ResponseEntity<String>> deleteItem(@PathVariable Long itemId,
+                                                   @AuthenticationPrincipal Jwt jwt){
+        return itemService.deleteItem(itemId, jwt.getClaim("sub"))
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/delete-media/{itemId}/{mediaId}")
+    public Mono<ResponseEntity<Void>> deleteItemMedia(@PathVariable Long itemId,
+                                                      @PathVariable UUID mediaId,
+                                                      @AuthenticationPrincipal Jwt jwt){
+        return itemService.deleteItemMedia(itemId, jwt.getClaim("sub"),  mediaId)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }

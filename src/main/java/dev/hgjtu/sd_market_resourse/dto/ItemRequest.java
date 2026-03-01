@@ -6,7 +6,6 @@ public class ItemRequest {
     private String title;
     private Integer categoryId;
     private String description;
-    private List<String> imagesUrls;
     private Integer price;
     private String location;
     private String type;
@@ -21,10 +20,6 @@ public class ItemRequest {
 
     public String getDescription() {
         return description;
-    }
-
-    public List<String> getImagesUrls() {
-        return imagesUrls;
     }
 
     public Integer getPrice() {

@@ -24,6 +24,12 @@ public class ItemMedia {
     @Column("created_at")
     private Instant createdAt;
 
+    public ItemMedia(Long itemId, UUID mediaId, Integer sortOrder) {
+        this.itemId = itemId;
+        this.mediaId = mediaId;
+        this.sortOrder = sortOrder;
+    }
+
     public Long getItemId() {
         return itemId;
     }

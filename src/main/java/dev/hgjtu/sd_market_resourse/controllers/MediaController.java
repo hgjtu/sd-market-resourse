@@ -14,7 +14,7 @@ import java.net.URL;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users-resource/media")
+@RequestMapping("/api/market-resource/media")
 public class MediaController {
     private final MediaService mediaService;
 
@@ -22,13 +22,10 @@ public class MediaController {
         this.mediaService = mediaService;
     }
 
-    @PostMapping("/upload-url")
+    @PostMapping("/upload-url/item/{itemId}")
     public Mono<MediaUploadResponse> getUploadUrl(@RequestBody UploadUrlRequest request,
-                                                  @AuthenticationPrincipal Jwt jwt) {
-        return mediaService.generateUploadUrl(
-                jwt.getClaim("sub"),
-                request.getContentType()
-        );
+                                                  @PathVariable Long itemId) {
+        return mediaService.generateUploadUrl(itemId, request);
     }
 
     @PostMapping("/complete/{id}")

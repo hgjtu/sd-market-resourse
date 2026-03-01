@@ -4,13 +4,8 @@ import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
 import dev.hgjtu.sd_market_resourse.feignClients.UserClient;
-import dev.hgjtu.sd_market_resourse.models.Comment;
-import dev.hgjtu.sd_market_resourse.models.Item;
-import dev.hgjtu.sd_market_resourse.models.ItemMedia;
-import dev.hgjtu.sd_market_resourse.repos.CategoryRepository;
-import dev.hgjtu.sd_market_resourse.repos.CommentRepository;
-import dev.hgjtu.sd_market_resourse.repos.ItemMediaRepository;
-import dev.hgjtu.sd_market_resourse.repos.ItemRepository;
+import dev.hgjtu.sd_market_resourse.models.*;
+import dev.hgjtu.sd_market_resourse.repos.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +17,6 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -31,6 +25,7 @@ public class ItemService {
     private final ItemMediaRepository itemMediaRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
+    private final MediaRepository mediaRepository;
 
     private final UserClient userClient;
 
@@ -38,13 +33,14 @@ public class ItemService {
 
     @Autowired
     public ItemService(ItemRepository itemRepository, ItemMediaRepository itemMediaRepository,
-                       CategoryRepository categoryRepository, CommentRepository commentRepository, UserClient userClient, MediaService mediaService) {
+                       CategoryRepository categoryRepository, CommentRepository commentRepository, UserClient userClient, MediaService mediaService, MediaRepository mediaRepository) {
         this.itemRepository = itemRepository;
         this.itemMediaRepository = itemMediaRepository;
         this.categoryRepository = categoryRepository;
         this.commentRepository = commentRepository;
         this.userClient = userClient;
         this.mediaService = mediaService;
+        this.mediaRepository = mediaRepository;
     }
 
     public Flux<ItemMinResponse> getAllByCategoryAndType(String category, String type) {
@@ -54,21 +50,7 @@ public class ItemService {
                         return categoryRepository.findByName(category)
                                 .flatMapMany(category1 ->
                                         itemRepository.findAllByCategoryIdAndTypeOrderByPublicationDate(category1.getId(), type)
-                                                .flatMap(item ->
-                                                        itemMediaRepository.findFirstByItemIdAndSortOrder(item.getId(), 0)
-                                                                .flatMap(itemMedia ->
-                                                                        mediaService.generateDownloadUrl(itemMedia.getMediaId())
-                                                                                .map(URL::toString)
-                                                                                .defaultIfEmpty("")
-                                                                                .onErrorResume(e -> Mono.just(""))
-                                                                )
-                                                                .map(url -> new ItemMinResponse(
-                                                                        item.getId(),
-                                                                        item.getTitle(),
-                                                                        url.isEmpty() ? null : url,
-                                                                        item.getPrice()
-                                                                ))
-                                                )
+                                                .flatMap(this::buildItemMinResponse)
                                 );
                     } else {
                         return Flux.error(new Exception("Category not found"));
@@ -83,21 +65,7 @@ public class ItemService {
                         return Mono.error(new RuntimeException("User not found"));
                     } else {
                         return itemRepository.findAllByUserIdAndTypeOrderByPublicationDate(userId, type)
-                                .flatMap(item ->
-                                        itemMediaRepository.findFirstByItemIdAndSortOrder(item.getId(), 0)
-                                                .flatMap(itemMedia ->
-                                                        mediaService.generateDownloadUrl(itemMedia.getMediaId())
-                                                                .map(URL::toString)
-                                                                .defaultIfEmpty("")
-                                                                .onErrorResume(e -> Mono.just(""))
-                                                )
-                                                .map(url -> new ItemMinResponse(
-                                                        item.getId(),
-                                                        item.getTitle(),
-                                                        url.isEmpty() ? null : url,
-                                                        item.getPrice()
-                                                ))
-                                );
+                                .flatMap(this::buildItemMinResponse);
                     }
                 });
     }
@@ -185,6 +153,54 @@ public class ItemService {
                 });
     }
 
+    public Flux<String> addItemMedia(Long itemId, String username, List<UUID> mediaList) {
+        return checkUserExistenceByUsername(username)
+                .flatMapMany(userId -> {
+                    if (userId == -1L) {
+                        return Flux.error(new RuntimeException("User not found"));
+                    } else {
+                        return Flux.fromIterable(mediaList)
+                                .flatMap(mediaId -> mediaRepository.findById(mediaId)
+                                            .switchIfEmpty(Mono.error(new RuntimeException("Media not found: " + mediaId)))
+                                            .flatMap(media -> {
+                                                if (media.getStatus() != Media.Status.READY) {
+                                                    return Mono.error(new RuntimeException("Media not ready: " + mediaId));
+                                                }
+
+                                                return itemMediaRepository.save(new ItemMedia(itemId, mediaId, 0))
+                                                        .flatMap(savedItemMedia ->
+                                                                mediaService.generateDownloadUrl(savedItemMedia.getMediaId())
+                                                                        .map(URL::toString)
+                                                                        .defaultIfEmpty("")
+                                                                        .onErrorResume(e -> Mono.just(""))
+                                                        );
+                                            })
+                                            , 5);
+                    }
+                });
+    }
+
+    public Mono<Void> deleteItemMedia(Long itemId, String username, UUID mediaId) {
+        return checkUserExistenceByUsername(username)
+                .flatMap(userId -> {
+                    if (userId == -1L) {
+                        return Mono.error(new RuntimeException("User not found"));
+                    } else {
+                        return itemRepository.findById(itemId)
+                                .switchIfEmpty(Mono.error(new RuntimeException("Item not found")))
+                                .flatMap(item -> {
+                                    if(Objects.equals(item.getUserId(), userId)){
+                                        return itemMediaRepository.deleteByItemIdAndMediaId(itemId, mediaId)
+                                                .then(Mono.defer(() -> mediaService.deleteMedia(mediaId, username, UserRole.ROLE_USER)));
+                                    }
+                                    else{
+                                        return Mono.error(new RuntimeException("Item not found"));
+                                    }
+                                });
+                    }
+                });
+    }
+
     public Mono<String> deleteItem(Long itemId, String username) {
         return checkUserExistenceByUsername(username)
                 .flatMap(userId -> {
@@ -201,7 +217,7 @@ public class ItemService {
                                         return Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).build());
                                     }
                                 })
-                                .then(Mono.just("Success"));
+                                .then(Mono.just("Success")); // TODO удалять надо все связанные медиа
                     }
                 });
     }
@@ -230,6 +246,32 @@ public class ItemService {
                 item.getType(),
                 comments
         );
+    }
+
+    private Mono<ItemMinResponse> buildItemMinResponse(Item item) {
+        return itemMediaRepository.findFirstByItemIdAndSortOrder(item.getId(), 0)
+                .flatMap(itemMedia ->
+                        mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                .map(URL::toString)
+                                .map(url -> new ItemMinResponse(
+                                        item.getId(),
+                                        item.getTitle(),
+                                        url,
+                                        item.getPrice()
+                                ))
+                                .onErrorResume(e -> Mono.just(new ItemMinResponse(
+                                        item.getId(),
+                                        item.getTitle(),
+                                        null,
+                                        item.getPrice()
+                                )))
+                )
+                .switchIfEmpty(Mono.just(new ItemMinResponse(
+                        item.getId(),
+                        item.getTitle(),
+                        null,
+                        item.getPrice()
+                )));
     }
 
 //    public Flux<ItemMinResponse> getAllByCategoryId(Integer id) {

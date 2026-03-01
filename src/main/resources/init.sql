@@ -46,3 +46,28 @@ CREATE TABLE IF NOT EXISTS comments (
     reply_comment_id BIGINT REFERENCES comments(id) ON DELETE CASCADE,
     content TEXT NOT NULL
 );
+
+
+CREATE OR REPLACE FUNCTION check_items_medias_limit()
+    RETURNS TRIGGER AS '
+    DECLARE
+        record_count INTEGER;
+    BEGIN
+        SELECT COUNT(*) INTO record_count
+        FROM items_medias
+        WHERE item_id = NEW.item_id;
+
+        IF record_count >= 10 THEN
+            RAISE EXCEPTION ''Cannot add more than 10 medias for item_id %'', NEW.item_id
+                USING HINT = ''Delete some existing medias for this item first'';
+        END IF;
+
+        RETURN NEW;
+    END;
+' LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_check_items_medias_limit ON items_medias;
+CREATE TRIGGER trigger_check_items_medias_limit
+    BEFORE INSERT ON items_medias
+    FOR EACH ROW
+EXECUTE FUNCTION check_items_medias_limit();

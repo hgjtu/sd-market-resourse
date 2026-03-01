@@ -1,6 +1,7 @@
 package dev.hgjtu.sd_market_resourse.services;
 
 import dev.hgjtu.sd_market_resourse.dto.MediaUploadResponse;
+import dev.hgjtu.sd_market_resourse.dto.UploadUrlRequest;
 import dev.hgjtu.sd_market_resourse.models.Media;
 import dev.hgjtu.sd_market_resourse.models.UserRole;
 import dev.hgjtu.sd_market_resourse.repos.MediaRepository;
@@ -38,22 +39,14 @@ public class MediaService {
         this.mediaRepository = mediaRepository;
     }
 
-    public Mono<MediaUploadResponse> generateUploadUrl(String username, String contentType) {
-        String extension = switch (contentType) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            default -> throw new IllegalArgumentException("Unsupported image type");
-        };
-
-        String fileName = username + "_profilePhoto_" + random.nextInt(1000, 10000) + extension;
-        String objectKey = "profile_medias/" + fileName; // TODO тут будет совсем по-другому
+    public Mono<MediaUploadResponse> generateUploadUrl(Long itemId, UploadUrlRequest request) {
+        String objectKey = "item_media/" + itemId + "/" + request.getFileName();
 
         // создаём запись в БД со статусом PENDING
         Media media = new Media(
                 null,
-                fileName,
-                contentType,
+                request.getFileName(),
+                request.getContentType(),
                 objectKey,
                 Media.Status.PENDING,
                 Instant.now(),
@@ -65,7 +58,7 @@ public class MediaService {
                     PutObjectRequest objectRequest = PutObjectRequest.builder()
                             .bucket(bucket)
                             .key(objectKey)
-                            .contentType(contentType)
+                            .contentType(request.getContentType())
                             .build();
 
                     PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()

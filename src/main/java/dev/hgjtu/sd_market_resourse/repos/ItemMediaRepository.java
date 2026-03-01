@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface ItemMediaRepository extends R2dbcRepository<ItemMedia, UUID> {
     Mono<ItemMedia> findFirstByItemIdAndSortOrder(Long itemId, Integer sortOrder);
     Flux<ItemMedia> findAllByItemIdOrderBySortOrderAsc(Long itemId);
+    Mono<Void> deleteByItemIdAndMediaId(Long itemId, UUID mediaId);
 }
