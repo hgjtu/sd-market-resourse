@@ -17,6 +17,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -112,7 +113,7 @@ public class ItemService {
                 });
     }
 
-    public Mono<ItemResponse> editItem(Long itemId, String username, ItemRequest itemRequest) {
+    public Mono<Long> editItem(Long itemId, String username, ItemRequest itemRequest) {
         return checkUserExistenceByUsername(username)
                 .flatMap(userId -> {
                     if (userId == -1L) {
@@ -122,33 +123,34 @@ public class ItemService {
                                 .switchIfEmpty(Mono.error(new RuntimeException("Item not found")))
                                 .flatMap(item -> {
                                     if(Objects.equals(item.getUserId(), userId)){
-                                        item.setTitle(itemRequest.getTitle());
-                                        item.setCategoryId(itemRequest.getCategoryId());
-                                        item.setDescription(itemRequest.getDescription());
-                                        item.setPrice(itemRequest.getPrice());
-                                        item.setLocation(itemRequest.getLocation());
-                                        item.setType(itemRequest.getType());
+                                        Optional.ofNullable(itemRequest.getTitle()).ifPresent(item::setTitle);
+                                        Optional.ofNullable(itemRequest.getCategoryId()).ifPresent(item::setCategoryId);
+                                        Optional.ofNullable(itemRequest.getDescription()).ifPresent(item::setDescription);
+                                        Optional.ofNullable(itemRequest.getPrice()).ifPresent(item::setPrice);
+                                        Optional.ofNullable(itemRequest.getLocation()).ifPresent(item::setLocation);
+                                        Optional.ofNullable(itemRequest.getType()).ifPresent(item::setType);
 
-                                        return itemRepository.save(item);
+                                        return itemRepository.save(item)
+                                                .map(Item::getId);
                                     }
                                     else{
                                         return Mono.error(new RuntimeException("Item not found"));
                                     }
-                                })
-                                .flatMap(savedItem ->
-                                        itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(savedItem.getId())
-                                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
-                                                        .map(URL::toString)
-                                                        .defaultIfEmpty("")
-                                                        .onErrorResume(e -> Mono.just(""))
-                                                )
-                                                .collectList()
-                                                .flatMap(urls ->
-                                                        commentRepository.findAllByItemId(savedItem.getId())
-                                                                .collectList()
-                                                                .map(comments -> mapToItemResponse(savedItem, username, comments, urls))
-                                                )
-                                );
+                                });
+//                                .flatMap(savedItem ->
+//                                        itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(savedItem.getId())
+//                                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
+//                                                        .map(URL::toString)
+//                                                        .defaultIfEmpty("")
+//                                                        .onErrorResume(e -> Mono.just(""))
+//                                                )
+//                                                .collectList()
+//                                                .flatMap(urls ->
+//                                                        commentRepository.findAllByItemId(savedItem.getId())
+//                                                                .collectList()
+//                                                                .map(comments -> mapToItemResponse(savedItem, username, comments, urls))
+//                                                )
+//                                );
                     }
                 });
     }

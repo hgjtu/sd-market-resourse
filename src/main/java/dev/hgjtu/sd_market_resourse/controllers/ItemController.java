@@ -66,7 +66,7 @@ public class ItemController {
     }
 
     @PatchMapping("/edit/{itemId}")
-    public Mono<ResponseEntity<ItemResponse>> editItem(@PathVariable Long itemId,
+    public Mono<ResponseEntity<Long>> editItem(@PathVariable Long itemId,
                                                        @RequestBody ItemRequest itemRequest,
                                                        @AuthenticationPrincipal Jwt jwt){
         return itemService.editItem(itemId, jwt.getClaim("sub"), itemRequest)
