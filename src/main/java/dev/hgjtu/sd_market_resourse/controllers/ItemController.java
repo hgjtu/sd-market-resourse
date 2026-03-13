@@ -51,7 +51,7 @@ public class ItemController {
     }
 
     @PostMapping("/add")
-    public Mono<ResponseEntity<ItemResponse>> addItem(@RequestBody ItemRequest itemRequest,
+    public Mono<ResponseEntity<Long>> addItem(@RequestBody ItemRequest itemRequest,
                                                       @AuthenticationPrincipal Jwt jwt){
         return itemService.addItem(jwt.getClaim("sub"), itemRequest)
                 .map(ResponseEntity::ok)
@@ -59,7 +59,7 @@ public class ItemController {
     }
 
     @PostMapping("/add-media/{itemId}")
-    public Flux<String> addItemMedia(@PathVariable Long itemId,
+    public Mono<Void> addItemMedia(@PathVariable Long itemId,
                                                    @RequestBody List<UUID> mediaIds,
                                                    @AuthenticationPrincipal Jwt jwt){
         return itemService.addItemMedia(itemId, jwt.getClaim("sub"),  mediaIds);

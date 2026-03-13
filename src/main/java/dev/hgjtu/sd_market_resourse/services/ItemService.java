@@ -92,7 +92,7 @@ public class ItemService {
                 );
     }
 
-    public Mono<ItemResponse> addItem(String username, ItemRequest itemRequest) {
+    public Mono<Long> addItem(String username, ItemRequest itemRequest) {
         return checkUserExistenceByUsername(username)
                 .flatMap(userId -> {
                     if (userId == -1L) {
@@ -107,7 +107,7 @@ public class ItemService {
                                 itemRequest.getLocation(),
                                 itemRequest.getType(),
                                 LocalDate.now()
-                        )).map(newItem -> mapToItemResponse(newItem, username, List.of(), List.of())); // TODO а вот тут хз, как доавблять медиа при создании
+                        )).map(Item::getId); // TODO а вот тут хз, как доавблять медиа при создании
                     }
                 });
     }
@@ -153,11 +153,11 @@ public class ItemService {
                 });
     }
 
-    public Flux<String> addItemMedia(Long itemId, String username, List<UUID> mediaList) {
+    public Mono<Void> addItemMedia(Long itemId, String username, List<UUID> mediaList) {
         return checkUserExistenceByUsername(username)
                 .flatMapMany(userId -> {
                     if (userId == -1L) {
-                        return Flux.error(new RuntimeException("User not found"));
+                        return Mono.error(new RuntimeException("User not found"));
                     } else {
                         return Flux.fromIterable(mediaList)
                                 .flatMap(mediaId -> mediaRepository.findById(mediaId)
@@ -168,16 +168,17 @@ public class ItemService {
                                                 }
 
                                                 return itemMediaRepository.save(new ItemMedia(itemId, mediaId, 0))
-                                                        .flatMap(savedItemMedia ->
-                                                                mediaService.generateDownloadUrl(savedItemMedia.getMediaId())
-                                                                        .map(URL::toString)
-                                                                        .defaultIfEmpty("")
-                                                                        .onErrorResume(e -> Mono.just(""))
-                                                        );
+                                                        .then(Mono.empty());
+//                                                        .flatMap(savedItemMedia ->
+//                                                                mediaService.generateDownloadUrl(savedItemMedia.getMediaId())
+//                                                                        .map(URL::toString)
+//                                                                        .defaultIfEmpty("")
+//                                                                        .onErrorResume(e -> Mono.just(""))
+//                                                        );
                                             })
                                             , 5);
                     }
-                });
+                }).then();
     }
 
     public Mono<Void> deleteItemMedia(Long itemId, String username, UUID mediaId) {
