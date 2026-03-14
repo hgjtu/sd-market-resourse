@@ -13,20 +13,20 @@ public class ItemResponse {
     private String title;
     private String description;
     private String username;
-    private List<String> imagesUrls;
+    private List<MediaUploadResponse> medias;
     private Integer price;
     private String location;
     private LocalDate publicationDate;
     private String type;
     private List<Comment> comments;
 
-    public ItemResponse(Long id, Integer categoryId, String title, String description, String username, List<String> imagesUrls, Integer price, String location, LocalDate publicationDate, String type, List<Comment> comments) {
+    public ItemResponse(Long id, Integer categoryId, String title, String description, String username, List<MediaUploadResponse> medias, Integer price, String location, LocalDate publicationDate, String type, List<Comment> comments) {
         this.id = id;
         this.categoryId = categoryId;
         this.title = title;
         this.description = description;
         this.username = username;
-        this.imagesUrls = imagesUrls;
+        this.medias = medias;
         this.price = price;
         this.location = location;
         this.publicationDate = publicationDate;
@@ -50,8 +50,8 @@ public class ItemResponse {
         return username;
     }
 
-    public List<String> getImagesUrls() {
-        return imagesUrls;
+    public List<MediaUploadResponse> getMedias() {
+        return medias;
     }
 
     public Integer getPrice() {

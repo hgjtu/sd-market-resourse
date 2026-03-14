@@ -3,6 +3,7 @@ package dev.hgjtu.sd_market_resourse.services;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
+import dev.hgjtu.sd_market_resourse.dto.MediaUploadResponse;
 import dev.hgjtu.sd_market_resourse.feignClients.UserClient;
 import dev.hgjtu.sd_market_resourse.models.*;
 import dev.hgjtu.sd_market_resourse.repos.*;
@@ -78,15 +79,15 @@ public class ItemService {
                                 .flatMap(username ->
                                         itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(item.getId())
                                                 .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
-                                                        .map(URL::toString)
-                                                        .defaultIfEmpty("")
-                                                        .onErrorResume(e -> Mono.just(""))
+                                                        .map(url -> new MediaUploadResponse(itemMedia.getMediaId(), url.toString()))
+                                                        .defaultIfEmpty(new MediaUploadResponse(itemMedia.getMediaId(), ""))
+                                                        .onErrorResume(e -> Mono.just(new MediaUploadResponse(itemMedia.getMediaId(), "")))
                                                 )
                                                 .collectList()
-                                                .flatMap(urls ->
+                                                .flatMap(medias ->
                                                         commentRepository.findAllByItemId(item.getId())
                                                                 .collectList()
-                                                                .map(comments -> mapToItemResponse(item, username, comments, urls))
+                                                                .map(comments -> mapToItemResponse(item, username, comments, medias))
                                                 )
                                 )
 
@@ -108,7 +109,7 @@ public class ItemService {
                                 itemRequest.getLocation(),
                                 itemRequest.getType(),
                                 LocalDate.now()
-                        )).map(Item::getId); // TODO а вот тут хз, как доавблять медиа при создании
+                        )).map(Item::getId);
                     }
                 });
     }
@@ -193,8 +194,8 @@ public class ItemService {
                                 .switchIfEmpty(Mono.error(new RuntimeException("Item not found")))
                                 .flatMap(item -> {
                                     if(Objects.equals(item.getUserId(), userId)){
-                                        return itemMediaRepository.deleteByItemIdAndMediaId(itemId, mediaId)
-                                                .then(Mono.defer(() -> mediaService.deleteMedia(mediaId, username, UserRole.ROLE_USER)));
+                                        return mediaService.deleteMedia(mediaId, username, UserRole.ROLE_USER)
+                                                .then(Mono.defer(() -> itemMediaRepository.deleteByItemIdAndMediaId(itemId, mediaId)));
                                     }
                                     else{
                                         return Mono.error(new RuntimeException("Item not found"));
@@ -235,7 +236,7 @@ public class ItemService {
                 .switchIfEmpty(Mono.empty());
     }
 
-    private ItemResponse mapToItemResponse(Item item, String username, List<Comment> comments, List<String> mediaURLs) {
+    private ItemResponse mapToItemResponse(Item item, String username, List<Comment> comments, List<MediaUploadResponse> mediaURLs) {
         return new ItemResponse(
                 item.getId(),
                 item.getCategoryId(),

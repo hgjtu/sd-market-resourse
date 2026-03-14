@@ -39,8 +39,8 @@ public class MediaService {
         this.mediaRepository = mediaRepository;
     }
 
-    public Mono<MediaUploadResponse> generateUploadUrl(Long itemId, UploadUrlRequest request) {
-        String objectKey = "item_media/" + itemId + "/" + request.getFileName();
+    public Mono<MediaUploadResponse> generateUploadUrl(Long itemId, String username, UploadUrlRequest request) {
+        String objectKey = "item_media/" + itemId + "_" + username + "/" + request.getFileName();
 
         // создаём запись в БД со статусом PENDING
         Media media = new Media(
@@ -105,8 +105,9 @@ public class MediaService {
         return mediaRepository.findById(mediaId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Media not found")))
                 .flatMap(media -> {
-                    // только владелец или админ)
-                    if (!media.getFileName().startsWith(username + "_profilePhoto_") &&
+                    // только владелец или админ
+                    String postIdent = media.getObjectKey().split("/")[1];
+                    if (!Objects.equals(postIdent.substring(postIdent.indexOf("_") + 1), username) &&
                             userRole != UserRole.ROLE_ADMIN) {
                         return Mono.error(new RuntimeException("No permission to delete this media"));
                     }

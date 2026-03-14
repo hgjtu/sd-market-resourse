@@ -88,7 +88,7 @@ public class ItemController {
                                                       @AuthenticationPrincipal Jwt jwt){
         return itemService.deleteItemMedia(itemId, jwt.getClaim("sub"),  mediaId)
                 .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+                .onErrorReturn(ResponseEntity.notFound().build());
     }
 
 //    @PatchMapping("/editJump/{id}")

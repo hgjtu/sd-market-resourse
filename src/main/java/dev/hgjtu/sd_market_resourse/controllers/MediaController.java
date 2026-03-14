@@ -24,8 +24,9 @@ public class MediaController {
 
     @PostMapping("/upload-url/item/{itemId}")
     public Mono<MediaUploadResponse> getUploadUrl(@RequestBody UploadUrlRequest request,
-                                                  @PathVariable Long itemId) {
-        return mediaService.generateUploadUrl(itemId, request);
+                                                  @PathVariable Long itemId,
+                                                  @AuthenticationPrincipal Jwt jwt) {
+        return mediaService.generateUploadUrl(itemId, jwt.getClaim("sub"), request);
     }
 
     @PostMapping("/complete/{id}")
