@@ -4,6 +4,7 @@ import dev.hgjtu.sd_market_resourse.dto.MediaUploadResponse;
 import dev.hgjtu.sd_market_resourse.dto.UploadUrlRequest;
 import dev.hgjtu.sd_market_resourse.models.Media;
 import dev.hgjtu.sd_market_resourse.models.UserRole;
+import dev.hgjtu.sd_market_resourse.repos.ItemMediaRepository;
 import dev.hgjtu.sd_market_resourse.repos.MediaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,16 +28,18 @@ public class MediaService {
     private final S3Client s3Client;
     private final S3Presigner presigner;
     private final MediaRepository mediaRepository;
+    private final ItemMediaRepository itemMediaRepository;
 
     @Value("${minio.bucket}")
     private String bucket;
 
     private final Random random = new Random();
 
-    public MediaService(S3Client s3Client, S3Presigner presigner, MediaRepository mediaRepository) {
+    public MediaService(S3Client s3Client, S3Presigner presigner, MediaRepository mediaRepository, ItemMediaRepository itemMediaRepository) {
         this.s3Client = s3Client;
         this.presigner = presigner;
         this.mediaRepository = mediaRepository;
+        this.itemMediaRepository = itemMediaRepository;
     }
 
     public Mono<MediaUploadResponse> generateUploadUrl(Long itemId, String username, UploadUrlRequest request) {
@@ -52,24 +55,33 @@ public class MediaService {
                 Instant.now(),
                 Instant.now()
         );
-        return mediaRepository.save(media)
-                .map(savedMedia -> {
-                    // генерируем presigned PUT URL
-                    PutObjectRequest objectRequest = PutObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(objectKey)
-                            .contentType(request.getContentType())
-                            .build();
+        return itemMediaRepository.countByItemId(itemId)
+            .flatMap(mediaCount -> {
+                if(mediaCount < 10){
+                    return mediaRepository.save(media)
+                        .map(savedMedia -> {
+                           // генерируем presigned PUT URL
+                           PutObjectRequest objectRequest = PutObjectRequest.builder()
+                                   .bucket(bucket)
+                                   .key(objectKey)
+                                   .contentType(request.getContentType())
+                                   .build();
 
-                    PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                            .signatureDuration(Duration.ofMinutes(10))
-                            .putObjectRequest(objectRequest)
-                            .build();
+                           PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                                   .signatureDuration(Duration.ofMinutes(10))
+                                   .putObjectRequest(objectRequest)
+                                   .build();
 
-                    URL presignedUrl = presigner.presignPutObject(presignRequest).url();
+                           URL presignedUrl = presigner.presignPutObject(presignRequest).url();
 
-                    return new MediaUploadResponse(savedMedia.getId(), presignedUrl.toString());
-                });
+                           return new MediaUploadResponse(savedMedia.getId(), presignedUrl.toString());
+                       });
+               }
+               else{
+                   return Mono.error(new RuntimeException("Can't upload more then 10 media to one item"));
+               }
+            });
+
     }
 
     public Mono<Media> completeUpload(UUID mediaId) {
