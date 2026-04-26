@@ -1,9 +1,6 @@
 package dev.hgjtu.sd_market_resourse.services;
 
-import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
-import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
-import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
-import dev.hgjtu.sd_market_resourse.dto.MediaUploadResponse;
+import dev.hgjtu.sd_market_resourse.dto.*;
 import dev.hgjtu.sd_market_resourse.feignClients.UserClient;
 import dev.hgjtu.sd_market_resourse.models.*;
 import dev.hgjtu.sd_market_resourse.repos.*;
@@ -16,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,22 +73,21 @@ public class ItemService {
     public Mono<ItemResponse> getItemById(Long id) {
         return itemRepository.findById(id)
                 .flatMap(item ->
-                        getUsernameById(item.getUserId())
-                                .flatMap(username ->
-                                        itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(item.getId())
-                                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
-                                                        .map(url -> new MediaUploadResponse(itemMedia.getMediaId(), url.toString()))
-                                                        .defaultIfEmpty(new MediaUploadResponse(itemMedia.getMediaId(), ""))
-                                                        .onErrorResume(e -> Mono.just(new MediaUploadResponse(itemMedia.getMediaId(), "")))
-                                                )
-                                                .collectList()
-                                                .flatMap(medias ->
-                                                        commentRepository.findAllByItemId(item.getId())
-                                                                .collectList()
-                                                                .map(comments -> mapToItemResponse(item, username, comments, medias))
-                                                )
+                    getUserDataWithMedia(item.getUserId())
+                        .flatMap(userInfo ->
+                            itemMediaRepository.findAllByItemIdOrderBySortOrderAsc(item.getId())
+                                .flatMap(itemMedia -> mediaService.generateDownloadUrl(itemMedia.getMediaId())
+                                        .map(url -> new MediaUploadResponse(itemMedia.getMediaId(), url.toString()))
+                                        .defaultIfEmpty(new MediaUploadResponse(itemMedia.getMediaId(), ""))
+                                        .onErrorResume(e -> Mono.just(new MediaUploadResponse(itemMedia.getMediaId(), "")))
                                 )
-
+                                .collectList()
+                                .flatMap(medias ->
+                                        commentRepository.findAllByItemId(item.getId())
+                                                .collectList()
+                                                .map(comments -> mapToItemResponse(item, userInfo, comments, medias))
+                                )
+                        )
                 );
     }
 
@@ -214,14 +211,78 @@ public class ItemService {
                         return itemRepository.findById(itemId)
                                 .switchIfEmpty(Mono.error(new RuntimeException("Item not found")))
                                 .flatMap(item -> {
-                                    if(Objects.equals(item.getUserId(), userId)){
+                                    if (Objects.equals(item.getUserId(), userId)) {
                                         return itemRepository.delete(item);
-                                    }
-                                    else{
+                                    } else {
                                         return Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).build());
                                     }
                                 })
                                 .then(Mono.just("Success")); // TODO удалять надо все связанные медиа
+                    }
+                });
+    }
+
+    public Mono<Comment> addCommentToItem(String username, CommentRequest commentRequest){
+        return checkUserExistenceByUsername(username)
+                .flatMap(userId -> {
+                    if (userId == -1L) {
+                        return Mono.error(new RuntimeException("User not found"));
+                    } else {
+                        return itemRepository.findById(commentRequest.getItemId())
+                                .switchIfEmpty(Mono.error(new RuntimeException("Item not found")))
+                                .flatMap(item -> {
+                                    Comment comment = new Comment(
+                                            commentRequest.getItemId(),
+                                            userId,
+                                            commentRequest.getReplyCommentId(),
+                                            commentRequest.getContent(),
+                                            0,
+                                            LocalDateTime.now()
+                                    );
+                                    return commentRepository.save(comment);
+                                });
+                    }
+                });
+    }
+
+    public Mono<Comment> editCommentToItem(String username, Long commentId, CommentRequest commentRequest){
+        return checkUserExistenceByUsername(username)
+                .flatMap(userId -> {
+                    if (userId == -1L) {
+                        return Mono.error(new RuntimeException("User not found"));
+                    } else {
+                        return commentRepository.findById(commentId)
+                                .switchIfEmpty(Mono.error(new RuntimeException("Comment not found")))
+                                .flatMap(comment -> {
+                                    if(Objects.equals(comment.getUserId(), userId)){
+                                        comment.setContent(commentRequest.getContent());
+
+                                        return commentRepository.save(comment);
+                                    }
+                                    else{
+                                        return Mono.error(new RuntimeException("Comment not found"));
+                                    }
+                                });
+                    }
+                });
+    }
+
+    public Mono<Void> deleteCommentToItem(String username, Long commentId){
+        return checkUserExistenceByUsername(username)
+                .flatMap(userId -> {
+                    if (userId == -1L) {
+                        return Mono.error(new RuntimeException("User not found"));
+                    } else {
+                        return commentRepository.findById(commentId)
+                                .switchIfEmpty(Mono.error(new RuntimeException("Comment not found")))
+                                .flatMap(comment -> {
+                                    if(Objects.equals(comment.getUserId(), userId)){
+                                        return commentRepository.delete(comment);
+                                    }
+                                    else{
+                                        return Mono.error(new RuntimeException("Comment not found"));
+                                    }
+                                });
                     }
                 });
     }
@@ -236,13 +297,18 @@ public class ItemService {
                 .switchIfEmpty(Mono.empty());
     }
 
-    private ItemResponse mapToItemResponse(Item item, String username, List<Comment> comments, List<MediaUploadResponse> mediaURLs) {
+    private Mono<UserWithMediaForResources> getUserDataWithMedia(Long userId) {
+        return userClient.getUserDataWithMedia(userId)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
+    }
+
+    private ItemResponse mapToItemResponse(Item item, UserWithMediaForResources authorInfo, List<Comment> comments, List<MediaUploadResponse> mediaURLs) {
         return new ItemResponse(
                 item.getId(),
                 item.getCategoryId(),
                 item.getTitle(),
                 item.getDescription(),
-                username,
+                authorInfo,
                 mediaURLs,
                 item.getPrice(),
                 item.getLocation(),

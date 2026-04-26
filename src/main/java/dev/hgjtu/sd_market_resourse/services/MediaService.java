@@ -81,7 +81,6 @@ public class MediaService {
                    return Mono.error(new RuntimeException("Can't upload more then 10 media to one item"));
                }
             });
-
     }
 
     public Mono<Media> completeUpload(UUID mediaId) {
@@ -132,5 +131,9 @@ public class MediaService {
                             ).subscribeOn(Schedulers.boundedElastic())
                             .then(mediaRepository.delete(media));
                 });
+    }
+
+    public Mono<Media> findMediaById(UUID mediaId){
+        return mediaRepository.findById(mediaId);
     }
 }

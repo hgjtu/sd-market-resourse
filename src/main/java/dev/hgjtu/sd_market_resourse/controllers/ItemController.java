@@ -1,8 +1,10 @@
 package dev.hgjtu.sd_market_resourse.controllers;
 
+import dev.hgjtu.sd_market_resourse.dto.CommentRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemMinResponse;
 import dev.hgjtu.sd_market_resourse.dto.ItemRequest;
 import dev.hgjtu.sd_market_resourse.dto.ItemResponse;
+import dev.hgjtu.sd_market_resourse.models.Comment;
 import dev.hgjtu.sd_market_resourse.services.ItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -91,20 +93,27 @@ public class ItemController {
                 .onErrorReturn(ResponseEntity.notFound().build());
     }
 
-//    @PatchMapping("/editJump/{id}")
-//    public Mono<ResponseEntity<UserResponse>> editJump(@PathVariable Long id,
-//                                                       @RequestBody JumpRequest jumpRequest,
-//                                                       @AuthenticationPrincipal Jwt jwt){
-//        return jumpService.editJump(jwt.getClaim("sub"), id, jumpRequest)
-//                .map(ResponseEntity::ok)
-//                .defaultIfEmpty(ResponseEntity.notFound().build());
-//    }
-//
-//    @DeleteMapping("/deleteJump/{id}")
-//    public Mono<ResponseEntity<UserResponse>> deleteJump(@PathVariable Long id,
-//                                                         @AuthenticationPrincipal Jwt jwt){
-//        return jumpService.deleteJump(jwt.getClaim("sub"), id)
-//                .map(ResponseEntity::ok)
-//                .defaultIfEmpty(ResponseEntity.notFound().build());
-//    }
+    @PostMapping("/add-comment")
+    private Mono<ResponseEntity<Comment>> addCommentToPost(@RequestBody CommentRequest commentRequest, // TODO сделать приватным
+                                                           @AuthenticationPrincipal Jwt jwt){
+        return itemService.addCommentToItem(jwt.getClaim("sub"), commentRequest)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/edit-comment/{commentId}")
+    private Mono<ResponseEntity<Comment>> editCommentToPost(@PathVariable Long commentId,
+                                                            @RequestBody CommentRequest commentRequest,
+                                                            @AuthenticationPrincipal Jwt jwt){
+        return itemService.editCommentToItem(jwt.getClaim("sub"), commentId, commentRequest)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/delete-comment/{commentId}")
+    private Mono<ResponseEntity<Void>> deleteCommentToPost(@PathVariable Long commentId,
+                                                           @AuthenticationPrincipal Jwt jwt){
+        return itemService.deleteCommentToItem(jwt.getClaim("sub"), commentId)
+                .map(ResponseEntity::ok);
+    }
 }

@@ -5,11 +5,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@Data
+import java.time.LocalDateTime;
+
 @Table("comments")
 public class Comment {
     @Id
@@ -27,4 +24,77 @@ public class Comment {
     @Column("content")
     private String content;
 
+    @Column("likes")
+    private Integer likes;
+
+    @Column("created_at")
+    private LocalDateTime createdAt;
+
+    public Comment() {
+    }
+
+    public Comment(Long itemId, Long userId, Long replyCommentId, String content, Integer likes, LocalDateTime createdAt) {
+        this.itemId = itemId;
+        this.userId = userId;
+        this.replyCommentId = replyCommentId;
+        this.content = content;
+        this.likes = likes;
+        this.createdAt = createdAt;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getReplyCommentId() {
+        return replyCommentId;
+    }
+
+    public void setReplyCommentId(Long replyCommentId) {
+        this.replyCommentId = replyCommentId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Integer getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Integer likes) {
+        this.likes = likes;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

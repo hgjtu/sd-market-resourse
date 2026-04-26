@@ -12,7 +12,7 @@ public class ItemResponse {
     private Integer categoryId;
     private String title;
     private String description;
-    private String username;
+    private UserWithMediaForResources authorInfo;
     private List<MediaUploadResponse> medias;
     private Integer price;
     private String location;
@@ -20,12 +20,12 @@ public class ItemResponse {
     private String type;
     private List<Comment> comments;
 
-    public ItemResponse(Long id, Integer categoryId, String title, String description, String username, List<MediaUploadResponse> medias, Integer price, String location, LocalDate publicationDate, String type, List<Comment> comments) {
+    public ItemResponse(Long id, Integer categoryId, String title, String description, UserWithMediaForResources authorInfo, List<MediaUploadResponse> medias, Integer price, String location, LocalDate publicationDate, String type, List<Comment> comments) {
         this.id = id;
         this.categoryId = categoryId;
         this.title = title;
         this.description = description;
-        this.username = username;
+        this.authorInfo = authorInfo;
         this.medias = medias;
         this.price = price;
         this.location = location;
@@ -44,10 +44,6 @@ public class ItemResponse {
 
     public String getDescription() {
         return description;
-    }
-
-    public String getUsername() {
-        return username;
     }
 
     public List<MediaUploadResponse> getMedias() {
@@ -76,5 +72,9 @@ public class ItemResponse {
 
     public String getType() {
         return type;
+    }
+
+    public UserWithMediaForResources getAuthorInfo() {
+        return authorInfo;
     }
 }
