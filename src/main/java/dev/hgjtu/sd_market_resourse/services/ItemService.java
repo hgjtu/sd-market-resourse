@@ -234,6 +234,7 @@ public class ItemService {
                                     Comment comment = new Comment(
                                             commentRequest.getItemId(),
                                             userId,
+                                            username,
                                             commentRequest.getReplyCommentId(),
                                             commentRequest.getContent(),
                                             0,

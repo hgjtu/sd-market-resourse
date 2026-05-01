@@ -18,6 +18,9 @@ public class Comment {
     @Column("user_id")
     private Long userId;
 
+    @Column("author_username")
+    private String authorUsername;
+
     @Column("reply_comment_id")
     private Long replyCommentId;
 
@@ -33,9 +36,10 @@ public class Comment {
     public Comment() {
     }
 
-    public Comment(Long itemId, Long userId, Long replyCommentId, String content, Integer likes, LocalDateTime createdAt) {
+    public Comment(Long itemId, Long userId, String authorUsername, Long replyCommentId, String content, Integer likes, LocalDateTime createdAt) {
         this.itemId = itemId;
         this.userId = userId;
+        this.authorUsername = authorUsername;
         this.replyCommentId = replyCommentId;
         this.content = content;
         this.likes = likes;
@@ -96,5 +100,13 @@ public class Comment {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAuthorUsername() {
+        return authorUsername;
+    }
+
+    public void setAuthorUsername(String authorUsername) {
+        this.authorUsername = authorUsername;
     }
 }

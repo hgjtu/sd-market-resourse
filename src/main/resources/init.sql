@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS comments (
     id BIGSERIAL PRIMARY KEY,
     item_id BIGINT REFERENCES items(id) ON DELETE CASCADE,
     user_id BIGINT NOT NULL,
+    author_username VARCHAR(255) NOT NULL,
     reply_comment_id BIGINT REFERENCES comments(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     likes INTEGER DEFAULT 0 CHECK (likes >= 0),
